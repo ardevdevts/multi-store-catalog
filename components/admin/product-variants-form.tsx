@@ -58,7 +58,6 @@ interface ProductVariantsFormProps {
     variants: Variant[]
     onChange: (variants: Variant[]) => void
     currencies: Currency[]
-    storeSlug?: string
 }
 
 export function ProductVariantsForm({ variants, onChange, currencies }: ProductVariantsFormProps) {
@@ -213,7 +212,6 @@ interface ProductVariantEditorProps {
     variantIndex: number
     onChange: (variants: Variant[]) => void
     currencies: Currency[]
-    storeSlug?: string
 }
 
 export function ProductVariantEditor({
@@ -221,9 +219,8 @@ export function ProductVariantEditor({
     variantIndex,
     onChange,
     currencies,
-    storeSlug,
 }: ProductVariantEditorProps) {
-    const currencyDialog = useCreateCurrency(storeSlug)
+    const currencyDialog = useCreateCurrency()
     const currentVariant = variants[variantIndex]
 
     const updateVariant = (index: number, data: Partial<Variant>) => {

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, Trash2, Star } from "lucide-react";
 import Image from "next/image";
-import type { ProductFormData, CoverImage } from "../types";
+import type { ProductFormData } from "../types";
 
 interface ImagesSectionProps {
     formData: ProductFormData;

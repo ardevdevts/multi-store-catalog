@@ -25,7 +25,7 @@ import {
 } from "./dialogs/CreateResourceDialogs";
 import type { ProductFormProps } from "./types";
 
-export function ProductForm({ productId, storeSlug }: ProductFormProps) {
+export function ProductForm({ productId }: ProductFormProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -41,7 +41,7 @@ export function ProductForm({ productId, storeSlug }: ProductFormProps) {
         manuallyEditedSlug,
         setManuallyEditedSlug,
         handleSubmit,
-    } = useProductForm(productId, storeSlug);
+    } = useProductForm(productId);
 
     const variantParam = searchParams.get("variant");
     const parsedVariantIndex = variantParam ? Number.parseInt(variantParam, 10) : Number.NaN;
@@ -51,9 +51,9 @@ export function ProductForm({ productId, storeSlug }: ProductFormProps) {
         parsedVariantIndex < formData.variants.length;
     const editingVariantIndex = isVariantIndexValid ? parsedVariantIndex : null;
 
-    const categoryDialog = useCreateCategory(storeSlug);
-    const subcategoryDialog = useCreateSubcategory(storeSlug);
-    const currencyDialog = useCreateCurrency(storeSlug);
+    const categoryDialog = useCreateCategory();
+    const subcategoryDialog = useCreateSubcategory();
+    const currencyDialog = useCreateCurrency();
 
     const updateFormData = (data: Partial<typeof formData>) => {
         setFormData({ ...formData, ...data });
@@ -107,7 +107,6 @@ export function ProductForm({ productId, storeSlug }: ProductFormProps) {
                                 variantIndex={editingVariantIndex}
                                 onChange={(variants) => updateFormData({ variants })}
                                 currencies={currencies}
-                                storeSlug={storeSlug}
                             />
 
                             <div className="flex flex-col sm:flex-row gap-4">
@@ -159,7 +158,6 @@ export function ProductForm({ productId, storeSlug }: ProductFormProps) {
                                     formData={formData}
                                     onUpdate={updateFormData}
                                     currencies={currencies}
-                                    storeSlug={storeSlug}
                                 />
                             </div>
 
@@ -220,7 +218,7 @@ export function ProductForm({ productId, storeSlug }: ProductFormProps) {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => router.push("/admin/stores/" + storeSlug + "/products")}
+                                onClick={() => router.push("/admin/products")}
                                 disabled={saving}
                                 className="w-full sm:w-auto"
                             >

@@ -28,8 +28,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export const CartProvider = ({ children, storeId }: { children: React.ReactNode; storeId?: string }) => {
-  const storageKey = storeId ? `shopping-cart-${storeId}` : 'shopping-cart'
+export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const storageKey = 'shopping-cart'
   const [items, setItems] = useState<CartItem[]>([])
   const hasHydratedRef = useRef(false)
 

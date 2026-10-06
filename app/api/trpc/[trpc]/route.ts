@@ -9,13 +9,9 @@ const handler = (req: Request) => {
         router: appRouter,
         createContext: async ({ req }) => {
             const session = await getApiSession(req)
-            const cookieHeader = req.headers.get('cookie') || ''
-            const activeStoreIdMatch = cookieHeader.match(/activeStoreId=([^;]+)/)
-            const activeStoreId = activeStoreIdMatch ? activeStoreIdMatch[1] : undefined
-            
+
             return {
                 session,
-                activeStoreId,
             }
         },
     })

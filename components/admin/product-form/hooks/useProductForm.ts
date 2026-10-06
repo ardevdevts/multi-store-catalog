@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/trpc/client";
 import { getErrorMessage } from "@/lib/error-messages";
-import type { ProductFormData, ProductData, Specifications } from "../types";
+import type { ProductFormData, Specifications } from "../types";
 import type { Variant } from "../../product-variants-form";
 import { generateSlug } from "../utils";
 
@@ -24,7 +24,7 @@ const initialFormData: ProductFormData = {
     hasVariants: false,
 };
 
-export function useProductForm(productId?: string, storeSlug?: string) {
+export function useProductForm(productId?: string) {
     const router = useRouter();
     const [saving, setSaving] = useState(false);
     const [manuallyEditedSlug, setManuallyEditedSlug] = useState(false);
@@ -33,27 +33,18 @@ export function useProductForm(productId?: string, storeSlug?: string) {
 
     const { data: productData, isLoading: productLoading } =
         trpc.admin.products.get.useQuery(
-            { id: productId || "", storeSlug },
-            { enabled: !!productId && !!storeSlug }
+            { id: productId || "" },
+            { enabled: !!productId }
         );
 
     const { data: categoriesData, isLoading: categoriesLoading } =
-        trpc.admin.categories.list.useQuery(
-            storeSlug ? { storeSlug } : undefined,
-            { enabled: !!storeSlug }
-        );
+        trpc.admin.categories.list.useQuery();
 
     const { data: subcategoriesData, isLoading: subcategoriesLoading } =
-        trpc.admin.subcategories.list.useQuery(
-            storeSlug ? { storeSlug } : undefined,
-            { enabled: !!storeSlug }
-        );
+        trpc.admin.subcategories.list.useQuery();
 
     const { data: currenciesData, isLoading: currenciesLoading } =
-        trpc.admin.currencies.list.useQuery(
-            storeSlug ? { storeSlug } : undefined,
-            { enabled: !!storeSlug }
-        );
+        trpc.admin.currencies.list.useQuery();
 
     const utils = trpc.useUtils();
 
@@ -328,24 +319,17 @@ export function useProductForm(productId?: string, storeSlug?: string) {
             if (productId) {
                 await updateProductMutation.mutateAsync({
                     id: productId,
-                    storeSlug,
                     data: submitData as any,
                 });
             } else {
                 await createProductMutation.mutateAsync({
                     ...(submitData as any),
-                    storeSlug,
                 });
             }
 
-            void utils.admin.products.list.invalidate(
-                storeSlug ? { storeSlug } : undefined
-            );
+            void utils.admin.products.list.invalidate();
             toast.success("Producto guardado", { id: savingToastId });
-            const basePath = storeSlug
-                ? `/admin/stores/${storeSlug}`
-                : "/admin/stores";
-            router.push(`${basePath}/products`);
+            router.push("/admin/products");
             router.refresh();
         } catch (error) {
             toast.error(getErrorMessage(error), { id: savingToastId });

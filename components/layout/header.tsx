@@ -8,10 +8,9 @@ import { useState } from "react";
 import Logo from "@/components/layout/logo";
 import { SearchDialog } from "@/components/search/search-dialog";
 import { SearchDropdown } from "@/components/search/search-dropdown";
-import { Store } from "@/generated/prisma/browser";
 import Link from "next/link";
 
-export const Header = ({ store }: { store?: Store }) => {
+export const Header = ({ storeName }: { storeName?: string }) => {
   const searchParams = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
@@ -22,7 +21,7 @@ export const Header = ({ store }: { store?: Store }) => {
     <header className="sticky top-0 z-50 w-full backdrop-blur supports-backdrop-filter:bg-background/60 border-b border-border">
       <div className="relative flex flex-row h-16 items-center justify-between px-4 md:px-6 py-3 md:py-0 gap-4 bg-primary/30">
         <div className="flex items-center gap-4 flex-1"> 
-          <Link href={store ? `/store/${store.slug}` : "/"} className="flex flex-row cursor-pointer items-center gap-2">
+          <Link href="/" className="flex flex-row cursor-pointer items-center gap-2">
             <div className="h-10 w-10 shrink-0">
               <Logo
                 className="h-full w-full object-contain"
@@ -31,7 +30,7 @@ export const Header = ({ store }: { store?: Store }) => {
                 height={64}
               />
             </div>
-            <p>{store?.name}</p>
+            <p>{storeName}</p>
           </Link>
         </div>
 
@@ -59,16 +58,11 @@ export const Header = ({ store }: { store?: Store }) => {
               <SearchDropdown
                 open={desktopSearchOpen}
                 onOpenChange={setDesktopSearchOpen}
-                storeSlug={store?.slug}
               />
             )}
           </div>
 
-          <SearchDialog
-            open={searchOpen}
-            onOpenChange={setSearchOpen}
-            storeSlug={store?.slug}
-          />
+          <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
 
           <div className="flex items-center gap-2">
             <WishlistSheet />

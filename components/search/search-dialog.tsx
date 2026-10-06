@@ -13,31 +13,24 @@ import { useDebounce } from "@/lib/hooks";
 interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storeSlug?: string;
 }
 
 export function SearchDialog({
   open,
   onOpenChange,
-  storeSlug,
 }: SearchDialogProps) {
   if (!open) {
     return null;
   }
 
   return (
-    <SearchDialogContent
-      open={open}
-      onOpenChange={onOpenChange}
-      storeSlug={storeSlug}
-    />
+    <SearchDialogContent open={open} onOpenChange={onOpenChange} />
   );
 }
 
 function SearchDialogContent({
   open,
   onOpenChange,
-  storeSlug,
 }: SearchDialogProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,23 +45,21 @@ function SearchDialogContent({
   }, [searchParams]);
 
   const { data: results, isLoading } = trpc.products.list.useQuery(
-    { storeSlug: storeSlug || "", search: debouncedQuery, limit: "5" },
-    { enabled: open && !!storeSlug && debouncedQuery.length > 0 },
+    { search: debouncedQuery, limit: "5" },
+    { enabled: open && debouncedQuery.length > 0 },
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
       onOpenChange(false);
-      const base = storeSlug ? `/store/${storeSlug}` : "/";
-      router.push(`${base}?search=${encodeURIComponent(query)}`);
+      router.push(`/?search=${encodeURIComponent(query)}`);
     }
   };
 
   const handleSelectProduct = (slug: string) => {
     onOpenChange(false);
-    const base = storeSlug ? `/store/${storeSlug}` : "/";
-    router.push(`${base}/product/${slug}`);
+    router.push(`/product/${slug}`);
   };
 
   return (
@@ -152,8 +143,7 @@ function SearchDialogContent({
               <button
                 onClick={() => {
                   onOpenChange(false);
-                  const base = storeSlug ? `/store/${storeSlug}` : "/";
-                  router.push(`${base}?search=${encodeURIComponent(query)}`);
+                  router.push(`/?search=${encodeURIComponent(query)}`);
                 }}
                 className="mt-2 w-full rounded-md bg-primary/10 p-2 text-center text-sm font-medium text-primary hover:bg-primary/20"
               >

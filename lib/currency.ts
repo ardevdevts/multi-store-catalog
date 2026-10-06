@@ -3,28 +3,20 @@ import type { Currency } from './currency-client'
 export type { Currency } from './currency-client'
 
 const CACHE_DURATION = 60000 // 1 minute
-const currencyCache = new Map<string, { currencies: Currency[]; cacheTime: number }>()
+let currencyCache: { currencies: Currency[]; cacheTime: number } | null = null
 
-export async function getCurrencies(storeId: string): Promise<Currency[]> {
+export async function getCurrencies(): Promise<Currency[]> {
     const now = Date.now()
-    const cached = currencyCache.get(storeId)
-    if (cached && now - cached.cacheTime < CACHE_DURATION) {
-        return cached.currencies
+    if (currencyCache && now - currencyCache.cacheTime < CACHE_DURATION) {
+        return currencyCache.currencies
     }
 
-    const storeCurrencies = await prisma.storeCurrency.findMany({
-        where: {
-            storeId,
-            isEnabled: true,
-            currency: { isActive: true },
-        },
-        include: { currency: true },
-        orderBy: { currency: { code: 'asc' } },
+    const currencies = await prisma.currency.findMany({
+        where: { isActive: true },
+        orderBy: { code: 'asc' },
     })
 
-    const currencies = storeCurrencies.map((item) => item.currency)
-
-    currencyCache.set(storeId, { currencies, cacheTime: now })
+    currencyCache = { currencies, cacheTime: now }
     return currencies
 }
 
@@ -34,8 +26,8 @@ export async function getCurrencyById(id: string): Promise<Currency | null> {
     })
 }
 
-export async function getDefaultCurrency(storeId: string): Promise<Currency | null> {
-    const currencies = await getCurrencies(storeId)
+export async function getDefaultCurrency(): Promise<Currency | null> {
+    const currencies = await getCurrencies()
     return currencies[0] || null
 }
 

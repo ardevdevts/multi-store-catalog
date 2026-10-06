@@ -3,13 +3,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { toNumber } from "@/lib/number";
 import { getProductSortablePrice } from "@/lib/product-pricing";
-import { TRPCError } from "@trpc/server";
 
 export const productsRouter = router({
   list: publicProcedure
     .input(
       z.object({
-        storeSlug: z.string(),
         page: z.string().optional(),
         limit: z.string().optional(),
         sort: z.string().optional(),
@@ -26,26 +24,12 @@ export const productsRouter = router({
       try {
         const searchParams = input;
 
-        const store = await prisma.store.findUnique({
-          where: { slug: searchParams.storeSlug },
-        });
-        if (!store) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Store not found",
-          });
-        }
-
         const enabledCurrencyIds = (
-          await prisma.storeCurrency.findMany({
-            where: {
-              storeId: store.id,
-              isEnabled: true,
-              currency: { isActive: true },
-            },
-            select: { currencyId: true },
+          await prisma.currency.findMany({
+            where: { isActive: true },
+            select: { id: true },
           })
-        ).map((item) => item.currencyId);
+        ).map((currency) => currency.id);
 
         const page = parseInt(searchParams.page ?? "1");
         const limit = parseInt(searchParams.limit ?? "12");
@@ -63,7 +47,7 @@ export const productsRouter = router({
           shouldSortByPrice = true;
         }
 
-        const where: any = { isActive: true, storeId: store.id };
+        const where: any = { isActive: true };
 
         if (searchParams.category) where.categoryId = searchParams.category;
         if (searchParams.subcategory)
@@ -78,7 +62,7 @@ export const productsRouter = router({
           currency ? enabledCurrencyIds.includes(currency) : false;
         if (currency) {
           where.prices = isCurrencyEnabled
-            ? { some: { currencyId: currency, storeId: store.id } }
+            ? { some: { currencyId: currency } }
             : { some: { currencyId: "__disabled_currency__" } };
         }
 
@@ -186,7 +170,7 @@ export const productsRouter = router({
                 .toLowerCase() || "";
             const normalizedDesc =
               prod.description
-                ?.normalize("NFD")
+                .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "")
                 .toLowerCase() || "";
             return (

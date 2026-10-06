@@ -5,54 +5,13 @@ import { currencySchema, currencyUpdateSchema } from '@/lib/api-validators'
 import { TRPCError } from '@trpc/server'
 import { ErrorCode, mapPrismaError, createErrorWithCode } from '@/lib/error-codes'
 
-const getStoreIdFromSlug = async (slug: string, userId: string) => {
-    const store = await prisma.store.findFirst({ where: { slug, ownerId: userId } })
-    if (!store) {
-        throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, { message: 'Store not found for this user' })
-    }
-    return store.id
-}
-
-const resolveStoreId = async (storeId: string | undefined, storeSlug: string | undefined, userId: string, activeStoreId?: string) => {
-    if (storeId) return storeId
-    if (storeSlug) return await getStoreIdFromSlug(storeSlug, userId)
-    if (activeStoreId) {
-        // Verify the active store belongs to the user
-        const store = await prisma.store.findFirst({
-            where: { id: activeStoreId, ownerId: userId }
-        })
-        if (store) return store.id
-    }
-    const store = await prisma.store.findFirst({ where: { ownerId: userId }, orderBy: { createdAt: 'asc' } })
-    if (!store) {
-        throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, { message: 'Store not found for this user' })
-    }
-    return store.id
-}
-
 export const adminCurrenciesRouter = router({
     list: protectedProcedure
-        .input(z.object({ storeId: z.string().optional(), storeSlug: z.string().optional() }).optional())
-        .query(async ({ input, ctx }) => {
-            const storeId = await resolveStoreId(input?.storeId, input?.storeSlug, ctx.session.user.id)
-            const [currencies, storeCurrencies] = await Promise.all([
-                prisma.currency.findMany({ orderBy: { code: 'asc' } }),
-                prisma.storeCurrency.findMany({
-                    where: { storeId },
-                    select: { currencyId: true, isEnabled: true },
-                }),
-            ])
-
-            const enabledMap = new Map(storeCurrencies.map((item) => [item.currencyId, item.isEnabled]))
-
-            return currencies.map((currency) => ({
-                ...currency,
-                isActive: enabledMap.get(currency.id) ?? false,
-            }))
+        .query(async () => {
+            return prisma.currency.findMany({ orderBy: { code: 'asc' } })
         }),
 
-    create: protectedProcedure.input(currencySchema).mutation(async ({ input, ctx }) => {
-        const storeId = await resolveStoreId(input?.storeId, input?.storeSlug, ctx.session.user.id, ctx.activeStoreId)
+    create: protectedProcedure.input(currencySchema).mutation(async ({ input }) => {
         const currency = await prisma.currency.upsert({
             where: { code: input.code.toUpperCase() },
             create: {
@@ -63,7 +22,7 @@ export const adminCurrenciesRouter = router({
                 decimalSeparator: input.decimalSeparator || '.',
                 thousandsSeparator: input.thousandsSeparator || ',',
                 decimalPlaces: input.decimalPlaces ?? 2,
-                isActive: true,
+                isActive: input.isActive ?? true,
             },
             update: {
                 name: input.name,
@@ -75,37 +34,23 @@ export const adminCurrenciesRouter = router({
             },
         })
 
-        await prisma.storeCurrency.upsert({
-            where: { storeId_currencyId: { storeId, currencyId: currency.id } },
-            create: {
-                storeId,
-                currencyId: currency.id,
-                isEnabled: input.isActive ?? true,
-            },
-            update: {
-                isEnabled: input.isActive ?? true,
-            },
-        })
-
         return currency
     }),
 
     update: protectedProcedure
-        .input(z.object({ id: z.string(), storeId: z.string().optional(), storeSlug: z.string().optional(), data: currencyUpdateSchema }))
-        .mutation(async ({ input, ctx }) => {
+        .input(z.object({ id: z.string(), data: currencyUpdateSchema }))
+        .mutation(async ({ input }) => {
             const { id, data } = input
-            const storeId = await resolveStoreId(input.storeId ?? data.storeId, input.storeSlug ?? data.storeSlug, ctx.session.user.id, ctx.activeStoreId)
             const existing = await prisma.currency.findUnique({ where: { id } })
             if (!existing) {
-                throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, { message: 'Currency not found for this store' })
+                throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, { message: 'Currency not found' })
             }
 
-            // Check if currency is being disabled and has related products
+            // Check if currency is being disabled and has related prices
             if (data.isActive === false) {
                 const pricesCount = await prisma.price.count({
                     where: {
                         currencyId: id,
-                        storeId,
                         OR: [
                             { productId: { not: null } },
                             { productVariantId: { not: null } }
@@ -130,36 +75,24 @@ export const adminCurrenciesRouter = router({
                     decimalSeparator: data.decimalSeparator || '.',
                     thousandsSeparator: data.thousandsSeparator || ',',
                     decimalPlaces: data.decimalPlaces ?? 2,
+                    isActive: data.isActive ?? existing.isActive,
                 }
             })
 
-            await prisma.storeCurrency.upsert({
-                where: { storeId_currencyId: { storeId, currencyId: id } },
-                create: {
-                    storeId,
-                    currencyId: id,
-                    isEnabled: data.isActive ?? true,
-                },
-                update: {
-                    isEnabled: data.isActive ?? true,
-                },
-            })
             return currency
         }),
 
-    delete: protectedProcedure.input(z.object({ id: z.string(), storeId: z.string().optional(), storeSlug: z.string().optional() })).mutation(async ({ input, ctx }) => {
+    delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
         try {
-            const storeId = await resolveStoreId(input?.storeId, input?.storeSlug, ctx.session.user.id, ctx.activeStoreId)
-            const existing = await prisma.storeCurrency.findFirst({ where: { currencyId: input.id, storeId } })
+            const existing = await prisma.currency.findUnique({ where: { id: input.id } })
             if (!existing) {
-                throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, { message: 'Currency not found for this store' })
+                throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, { message: 'Currency not found' })
             }
 
-            // Check if currency has related products
+            // Check if currency has related prices
             const pricesCount = await prisma.price.count({
                 where: {
                     currencyId: input.id,
-                    storeId,
                     OR: [
                         { productId: { not: null } },
                         { productVariantId: { not: null } }
@@ -173,9 +106,9 @@ export const adminCurrenciesRouter = router({
                 })
             }
 
-            await prisma.storeCurrency.update({
-                where: { id: existing.id },
-                data: { isEnabled: false },
+            await prisma.currency.update({
+                where: { id: input.id },
+                data: { isActive: false },
             })
             return { success: true }
         } catch (error: any) {

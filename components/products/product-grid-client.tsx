@@ -33,7 +33,6 @@ import {
 } from "@/lib/product-pricing";
 
 interface ProductGridClientProps {
-  storeSlug: string;
   categorySlug?: string;
   subcategorySlug?: string;
   filterContent?: React.ReactNode;
@@ -81,7 +80,6 @@ const toOptionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
 
 export const ProductGridClient = ({
-  storeSlug,
   categorySlug,
   subcategorySlug,
   filterContent,
@@ -101,8 +99,8 @@ export const ProductGridClient = ({
 
   // tRPC queries
   const categoryQuery = trpc.categories.list.useQuery(
-    { storeSlug, slug: categorySlug },
-    { enabled: !!storeSlug && !!categorySlug },
+    { slug: categorySlug },
+    { enabled: !!categorySlug },
   );
   const selectedCategory = categorySlug
     ? categoryQuery.data?.docs?.[0] || null
@@ -110,15 +108,14 @@ export const ProductGridClient = ({
 
   const subcategoryQuery = trpc.subcategories.list.useQuery(
     subcategorySlug && selectedCategory
-      ? { storeSlug, slug: subcategorySlug, categoryId: selectedCategory.id }
-      : { storeSlug },
-    { enabled: !!storeSlug && !!subcategorySlug },
+      ? { slug: subcategorySlug, categoryId: selectedCategory.id }
+      : undefined,
+    { enabled: !!subcategorySlug },
   );
   const selectedSubcategory = subcategoryQuery.data?.docs?.[0] || null;
 
   const productsQuery = trpc.products.list.useQuery(
     {
-      storeSlug,
       page: pageFromUrl.toString(),
       limit: "12",
       sort: currentSort,
@@ -130,7 +127,6 @@ export const ProductGridClient = ({
       currency: selectedCurrencyId,
       price: searchParams.get("price") || undefined,
     },
-    { enabled: !!storeSlug },
   );
   const products = (productsQuery.data?.docs ?? []) as ProductListItem[];
   const totalPages = productsQuery.data?.totalPages || 1;
@@ -176,7 +172,7 @@ export const ProductGridClient = ({
       }
     });
     const qs = params.toString();
-    router.push(qs ? `/store/${storeSlug}?${qs}` : `/store/${storeSlug}`);
+    router.push(qs ? `/?${qs}` : '/');
   };
 
   const handleSortChange = (value: string) => {
@@ -209,7 +205,7 @@ export const ProductGridClient = ({
           {(selectedCategory || selectedSubcategory) && (
             <div className="mb-4">
               <Link
-                href={`/store/${storeSlug}`}
+                href="/"
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -233,10 +229,7 @@ export const ProductGridClient = ({
               <p className="text-sm text-muted-foreground">
                 No se encontraron productos
               </p>
-              <SearchAndFiltersBar
-                storeSlug={storeSlug}
-                filterContent={filterContent}
-              />
+              <SearchAndFiltersBar filterContent={filterContent} />
             </div>
 
             <div className="hidden md:flex items-center gap-2">
@@ -288,7 +281,7 @@ export const ProductGridClient = ({
           <div className="mb-8">
             <div className="flex items-center gap-2 text-sm">
               <Link
-                href={`/store/${storeSlug}`}
+                href="/"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
                 Inicio
@@ -297,7 +290,7 @@ export const ProductGridClient = ({
               {selectedCategory && (
                 <>
                   <Link
-                    href={`/store/${storeSlug}?category=${categorySlug}`}
+                    href={`/?category=${categorySlug}`}
                     className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     {selectedCategory.name}
@@ -332,10 +325,7 @@ export const ProductGridClient = ({
               {Math.min(currentPage * 12, totalDocs)} de {totalDocs}{" "}
               {totalDocs === 1 ? "producto" : "productos"}
             </p>
-            <SearchAndFiltersBar
-              storeSlug={storeSlug}
-              filterContent={filterContent}
-            />
+            <SearchAndFiltersBar filterContent={filterContent} />
           </div>
 
           <div className="hidden md:flex items-center gap-2">
@@ -436,7 +426,6 @@ export const ProductGridClient = ({
                     id={product.id}
                     name={product.name}
                     description={product.shortDescription || ""}
-                    storeSlug={storeSlug}
                     price={pricing.price}
                     pricePrefix={pricing.usesVariantPricing ? "Desde" : undefined}
                     regularPrice={

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ProductVariantsForm, Variant } from "@/components/admin/product-variants-form";
+import { ProductVariantsForm } from "@/components/admin/product-variants-form";
 import type { ProductFormData } from "../types";
 import type { Currency } from "@/lib/currency-client";
 
@@ -9,14 +9,12 @@ interface VariantsSectionProps {
     formData: ProductFormData;
     onUpdate: (data: Partial<ProductFormData>) => void;
     currencies: Currency[];
-    storeSlug?: string;
 }
 
 export function VariantsSection({
     formData,
     onUpdate,
     currencies,
-    storeSlug,
 }: VariantsSectionProps) {
     return (
         <Card>
@@ -45,7 +43,6 @@ export function VariantsSection({
                         variants={formData.variants}
                         onChange={(variants) => onUpdate({ variants })}
                         currencies={currencies}
-                        storeSlug={storeSlug}
                     />
                 </CardContent>
             )}

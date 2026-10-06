@@ -10,24 +10,19 @@ import type { Category, Subcategory } from '@/generated/prisma/client'
 import type { ReactElement } from 'react'
 
 interface FilterSidebarProps {
-  storeSlug: string
-  storeId: string
   categorySlug?: string
   subcategorySlug?: string
 }
 
 export const getFilterContent = async (
-  storeSlug: string,
-  storeId: string,
   categorySlug?: string,
   subcategorySlug?: string,
 ): Promise<ReactElement> => {
-  const currencies = await getCurrencies(storeId)
+  const currencies = await getCurrencies()
 
   const categories = await prisma.category.findMany({
     where: {
       isActive: true,
-      storeId,
     },
     orderBy: {
       name: 'asc',
@@ -39,7 +34,6 @@ export const getFilterContent = async (
     selectedCategory = await prisma.category.findFirst({
       where: {
         slug: categorySlug,
-        storeId,
       },
     })
   }
@@ -50,7 +44,6 @@ export const getFilterContent = async (
       where: {
         categoryId: selectedCategory.id,
         isActive: true,
-        storeId,
       },
       orderBy: {
         name: 'asc',
@@ -64,7 +57,6 @@ export const getFilterContent = async (
         where: {
           categoryId: category.id,
           isActive: true,
-          storeId,
         },
       })
       return { id: category.id, count }
@@ -82,7 +74,6 @@ export const getFilterContent = async (
             categoryId: selectedCategory.id,
             subcategoryId: subcategory.id,
             isActive: true,
-            storeId,
           },
         })
         return { id: subcategory.id, count }
@@ -127,7 +118,6 @@ export const getFilterContent = async (
       where: {
         slug: subcategorySlug,
         categoryId: selectedCategory.id,
-        storeId,
       },
     })
 
@@ -157,7 +147,7 @@ export const getFilterContent = async (
             {categories.map((category) => (
               <Link
                 key={category.id}
-                href={`/store/${storeSlug}?category=${category.slug}`}
+                href={`/?category=${category.slug}`}
                 className="w-full flex items-center justify-between text-left px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 <span className="text-sm">{category.name}</span>
@@ -178,7 +168,7 @@ export const getFilterContent = async (
           </p>
           <div className="space-y-1">
             <Link
-              href={`/store/${storeSlug}?category=${categorySlug}`}
+              href={`/?category=${categorySlug}`}
               className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${!subcategorySlug ? 'bg-accent text-accent-foreground' : ''
                 }`}
             >
@@ -190,7 +180,7 @@ export const getFilterContent = async (
             {subcategoriesForCategory.map((subcategory) => (
               <Link
                 key={subcategory.id}
-                href={`/store/${storeSlug}?category=${categorySlug}&subcategory=${subcategory.slug}`}
+                href={`/?category=${categorySlug}&subcategory=${subcategory.slug}`}
                 className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${subcategorySlug === subcategory.slug ? 'bg-accent text-accent-foreground' : ''
                   }`}
               >
@@ -217,8 +207,8 @@ export const getFilterContent = async (
   return filterContent
 }
 
-export const FilterSidebar = async ({ storeSlug, storeId, categorySlug, subcategorySlug }: FilterSidebarProps) => {
-  const filterContent = await getFilterContent(storeSlug, storeId, categorySlug, subcategorySlug)
+export const FilterSidebar = async ({ categorySlug, subcategorySlug }: FilterSidebarProps) => {
+  const filterContent = await getFilterContent(categorySlug, subcategorySlug)
 
   return (
     <>

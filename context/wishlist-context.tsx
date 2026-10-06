@@ -28,8 +28,8 @@ export const useWishlist = () => {
   return context
 }
 
-export const WishlistProvider = ({ children, storeId }: { children: React.ReactNode; storeId?: string }) => {
-  const storageKey = storeId ? `wishlist-${storeId}` : 'wishlist'
+export const WishlistProvider = ({ children }: { children: React.ReactNode }) => {
+  const storageKey = 'wishlist'
   const [items, setItems] = useState<WishlistItem[]>([])
   const hasHydratedRef = useRef(false)
 

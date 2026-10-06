@@ -178,8 +178,6 @@ export function AdminResource<
         return "admin.products";
       case "/api/admin/media":
         return "admin.media";
-      case "/api/admin/stores":
-        return "admin.stores";
       case "/api/categories":
         return "categories";
       case "/api/subcategories":

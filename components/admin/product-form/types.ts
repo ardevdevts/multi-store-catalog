@@ -51,7 +51,6 @@ export interface ProductFormData {
 
 export interface ProductFormProps {
     productId?: string;
-    storeSlug?: string;
 }
 
 export interface ProductData {

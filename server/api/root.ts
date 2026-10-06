@@ -9,16 +9,13 @@ import { adminCurrenciesRouter } from './routers/admin/currencies'
 import { adminProductsRouter } from './routers/admin/products'
 import { adminMediaRouter } from './routers/admin/media'
 import { adminUsersRouter } from './routers/admin/users'
-import { adminSettingsRouter } from './routers/admin/settings'
-import { adminStoresRouter } from './routers/admin/stores'
-import { contactRouter } from './routers/contact'
+import { adminSiteRouter } from './routers/admin/site'
 
 export const appRouter = router({
     categories: categoriesRouter,
     subcategories: subcategoriesRouter,
     products: productsRouter,
     currencies: currenciesRouter,
-    contact: contactRouter,
     admin: router({
         categories: adminCategoriesRouter,
         subcategories: adminSubcategoriesRouter,
@@ -26,8 +23,7 @@ export const appRouter = router({
         products: adminProductsRouter,
         media: adminMediaRouter,
         users: adminUsersRouter,
-        settings: adminSettingsRouter,
-        stores: adminStoresRouter,
+        site: adminSiteRouter,
     }),
 })
 

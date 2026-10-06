@@ -13,17 +13,16 @@ import { useState } from 'react'
 import { FilterSheet } from '../filters/filter-sheet'
 
 interface SearchAndFiltersBarProps {
-  storeSlug?: string
   filterContent?: React.ReactNode
 }
 
-export const SearchAndFiltersBar = ({ storeSlug, filterContent }: SearchAndFiltersBarProps) => {
+export const SearchAndFiltersBar = ({ filterContent }: SearchAndFiltersBarProps) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const currentSort = searchParams.get('sort') || '-createdAt'
-  const basePath = storeSlug ? `/store/${storeSlug}` : '/'
+  const basePath = '/'
 
 
   const handleSortChange = (value: string) => {

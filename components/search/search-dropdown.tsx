@@ -35,13 +35,11 @@ interface SearchProduct {
 interface SearchDropdownProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storeSlug?: string;
 }
 
 export function SearchDropdown({
   open,
   onOpenChange,
-  storeSlug,
 }: SearchDropdownProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,8 +55,8 @@ export function SearchDropdown({
   }, [searchParams]);
 
   const { data: results, isLoading } = trpc.products.list.useQuery(
-    { storeSlug: storeSlug || "", search: debouncedQuery, limit: "5" },
-    { enabled: !!storeSlug && debouncedQuery.length > 0 && open },
+    { search: debouncedQuery, limit: "5" },
+    { enabled: debouncedQuery.length > 0 && open },
   );
 
   React.useEffect(() => {
@@ -84,8 +82,7 @@ export function SearchDropdown({
     if (e.key === "Enter") {
       e.preventDefault();
       onOpenChange(false);
-      const base = storeSlug ? `/store/${storeSlug}` : "/";
-      router.push(`${base}?search=${encodeURIComponent(query)}`);
+      router.push(`/?search=${encodeURIComponent(query)}`);
     } else if (e.key === "Escape") {
       onOpenChange(false);
     }
@@ -94,8 +91,7 @@ export function SearchDropdown({
   const handleSelectProduct = (slug: string) => {
     onOpenChange(false);
     setQuery("");
-    const base = storeSlug ? `/store/${storeSlug}` : "/";
-    router.push(`${base}/product/${slug}`);
+    router.push(`/product/${slug}`);
   };
 
   if (!open) return null;
@@ -180,8 +176,7 @@ export function SearchDropdown({
                 onClick={() => {
                   onOpenChange(false);
                   setQuery("");
-                  const base = storeSlug ? `/store/${storeSlug}` : "/";
-                  router.push(`${base}/?search=${encodeURIComponent(query)}`);
+                  router.push(`/?search=${encodeURIComponent(query)}`);
                 }}
                 className="mt-2 w-full bg-primary/10 p-2 text-center text-sm font-medium text-primary hover:bg-primary/20"
               >

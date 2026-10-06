@@ -13,7 +13,7 @@ const loadPrismaModule = async (): Promise<PrismaModule> => {
     return (await import('../generated/prisma/client')) as PrismaModule
   } catch (error) {
     console.error(
-      'Prisma Client not found at ./generated/prisma. Run `pnpm prisma generate` or `pnpm db:seed` to generate it.',
+      'Prisma Client not found at ./generated/prisma. Run `bunx prisma generate` or `bun run db:seed` to generate it.',
     )
     throw error
   }
@@ -34,14 +34,7 @@ type CurrencySeed = {
 
 const ACTIVE_CURRENCY_CODES = new Set(['USD', 'EUR', 'CUP'])
 
-type StoreCategorySeed = {
-  name: string
-  slug: string
-  description: string
-  icon: string
-}
-
-type StoreThemeSeed = {
+type ThemeSeed = {
   name: string
   light: Record<string, string>
   dark: Record<string, string>
@@ -49,54 +42,15 @@ type StoreThemeSeed = {
 }
 
 const CONFIG = {
-  users: 4,
-  storesPerUser: { min: 1, max: 2 },
-  categoriesPerStore: 4,
+  users: 2,
+  categories: 6,
   subcategoriesPerCategory: 3,
   productsPerSubcategory: 6,
   variantsPerProduct: { min: 1, max: 3 },
   productImages: { min: 1, max: 3 },
   variantImages: { min: 0, max: 2 },
+  pricingCurrencies: { min: 2, max: 4 },
 }
-
-const STORE_CATEGORIES: StoreCategorySeed[] = [
-  {
-    name: 'Electronics',
-    slug: 'electronics',
-    description: 'Devices, gadgets, and accessories for modern life.',
-    icon: 'cpu',
-  },
-  {
-    name: 'Home & Garden',
-    slug: 'home-garden',
-    description: 'Furniture, decor, and tools to refresh any space.',
-    icon: 'sofa',
-  },
-  {
-    name: 'Fashion',
-    slug: 'fashion',
-    description: 'Clothing, footwear, and accessories for every season.',
-    icon: 'shirt',
-  },
-  {
-    name: 'Sports & Outdoors',
-    slug: 'sports-outdoors',
-    description: 'Gear for training, travel, and adventure.',
-    icon: 'trophy',
-  },
-  {
-    name: 'Beauty',
-    slug: 'beauty',
-    description: 'Skincare, wellness, and self-care essentials.',
-    icon: 'sparkles',
-  },
-  {
-    name: 'Toys & Games',
-    slug: 'toys-games',
-    description: 'Playful picks for kids, families, and collectors.',
-    icon: 'gamepad-2',
-  },
-]
 
 const CURRENCIES: CurrencySeed[] = [
   {
@@ -136,33 +90,6 @@ const CURRENCIES: CurrencySeed[] = [
     decimalPlaces: 2,
   },
   {
-    name: 'Dólar australiano',
-    code: 'AUD',
-    symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Dólar neozelandés',
-    code: 'NZD',
-    symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Franco suizo',
-    code: 'CHF',
-    symbol: 'CHF',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
     name: 'Yen japonés',
     code: 'JPY',
     symbol: '¥',
@@ -172,216 +99,18 @@ const CURRENCIES: CurrencySeed[] = [
     decimalPlaces: 0,
   },
   {
-    name: 'Yuan chino',
-    code: 'CNY',
-    symbol: '¥',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Dólar de Hong Kong',
-    code: 'HKD',
+    name: 'Peso chileno',
+    code: 'CLP',
     symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Dólar de Singapur',
-    code: 'SGD',
-    symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Won surcoreano',
-    code: 'KRW',
-    symbol: '₩',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
     decimalPlaces: 0,
   },
   {
-    name: 'Rupia india',
-    code: 'INR',
-    symbol: '₹',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Rupia indonesia',
-    code: 'IDR',
-    symbol: 'Rp',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Peso filipino',
-    code: 'PHP',
-    symbol: '₱',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Ringgit malayo',
-    code: 'MYR',
-    symbol: 'RM',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Baht tailandés',
-    code: 'THB',
-    symbol: '฿',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Dong vietnamita',
-    code: 'VND',
-    symbol: '₫',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 0,
-  },
-  {
-    name: 'Corona sueca',
-    code: 'SEK',
-    symbol: 'kr',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Corona noruega',
-    code: 'NOK',
-    symbol: 'kr',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Corona danesa',
-    code: 'DKK',
-    symbol: 'kr',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Zloty polaco',
-    code: 'PLN',
-    symbol: 'zł',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Corona checa',
-    code: 'CZK',
-    symbol: 'Kč',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Forinto húngaro',
-    code: 'HUF',
-    symbol: 'Ft',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Leu rumano',
-    code: 'RON',
-    symbol: 'lei',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Lev búlgaro',
-    code: 'BGN',
-    symbol: 'лв',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Rublo ruso',
-    code: 'RUB',
-    symbol: '₽',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Lira turca',
-    code: 'TRY',
-    symbol: '₺',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Rand sudafricano',
-    code: 'ZAR',
-    symbol: 'R',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Dírham de los Emiratos Árabes Unidos',
-    code: 'AED',
-    symbol: 'د.إ',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Riyal saudí',
-    code: 'SAR',
-    symbol: 'ر.س',
-    symbolPosition: 'after',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Shékel israelí',
-    code: 'ILS',
-    symbol: '₪',
+    name: 'Peso mexicano',
+    code: 'MXN',
+    symbol: '$',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
@@ -397,33 +126,6 @@ const CURRENCIES: CurrencySeed[] = [
     decimalPlaces: 2,
   },
   {
-    name: 'Peso mexicano',
-    code: 'MXN',
-    symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Peso argentino',
-    code: 'ARS',
-    symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Peso chileno',
-    code: 'CLP',
-    symbol: '$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 0,
-  },
-  {
     name: 'Peso colombiano',
     code: 'COP',
     symbol: '$',
@@ -433,45 +135,9 @@ const CURRENCIES: CurrencySeed[] = [
     decimalPlaces: 2,
   },
   {
-    name: 'Sol peruano',
-    code: 'PEN',
-    symbol: 'S/',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
     name: 'Peso uruguayo',
     code: 'UYU',
     symbol: '$U',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Boliviano',
-    code: 'BOB',
-    symbol: 'Bs',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Guaraní paraguayo',
-    code: 'PYG',
-    symbol: '₲',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 0,
-  },
-  {
-    name: 'Bolívar venezolano',
-    code: 'VES',
-    symbol: 'Bs',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
@@ -496,45 +162,36 @@ const CURRENCIES: CurrencySeed[] = [
     decimalPlaces: 2,
   },
   {
-    name: 'Colón costarricense',
-    code: 'CRC',
-    symbol: '₡',
+    name: 'Sol peruano',
+    code: 'PEN',
+    symbol: 'S/',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
     decimalPlaces: 2,
   },
   {
-    name: 'Quetzal guatemalteco',
-    code: 'GTQ',
-    symbol: 'Q',
+    name: 'Rupia india',
+    code: 'INR',
+    symbol: '₹',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
     decimalPlaces: 2,
   },
   {
-    name: 'Lempira hondureña',
-    code: 'HNL',
-    symbol: 'L',
+    name: 'Lira turca',
+    code: 'TRY',
+    symbol: '₺',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
     decimalPlaces: 2,
   },
   {
-    name: 'Córdoba nicaragüense',
-    code: 'NIO',
-    symbol: 'C$',
-    symbolPosition: 'before',
-    decimalSeparator: '.',
-    thousandsSeparator: ',',
-    decimalPlaces: 2,
-  },
-  {
-    name: 'Balboa panameño',
-    code: 'PAB',
-    symbol: 'B/.',
+    name: 'Rand sudafricano',
+    code: 'ZAR',
+    symbol: 'R',
     symbolPosition: 'before',
     decimalSeparator: '.',
     thousandsSeparator: ',',
@@ -569,7 +226,7 @@ const MATERIAL_OPTIONS = [
   { label: 'Wood', value: 'wood' },
 ]
 
-const THEME_PRESETS: StoreThemeSeed[] = [
+const THEME_PRESETS: ThemeSeed[] = [
   {
     name: 'Coastal',
     fontId: 'lora',
@@ -598,66 +255,6 @@ const THEME_PRESETS: StoreThemeSeed[] = [
       border: 'oklch(30% 0.02 230)',
       ring: 'oklch(70% 0.1 230)',
       radius: '0.75rem',
-    },
-  },
-  {
-    name: 'Sunset Market',
-    fontId: 'playfair',
-    light: {
-      background: 'oklch(98% 0.02 30)',
-      foreground: 'oklch(20% 0.03 20)',
-      primary: 'oklch(58% 0.19 35)',
-      primaryForeground: 'oklch(98% 0 0)',
-      accent: 'oklch(90% 0.08 45)',
-      accentForeground: 'oklch(20% 0.03 20)',
-      card: 'oklch(99% 0.01 30)',
-      cardForeground: 'oklch(20% 0.03 20)',
-      border: 'oklch(88% 0.04 30)',
-      ring: 'oklch(60% 0.18 35)',
-      radius: '0.5rem',
-    },
-    dark: {
-      background: 'oklch(15% 0.04 25)',
-      foreground: 'oklch(92% 0.02 35)',
-      primary: 'oklch(78% 0.16 40)',
-      primaryForeground: 'oklch(14% 0.03 25)',
-      accent: 'oklch(26% 0.05 30)',
-      accentForeground: 'oklch(92% 0.02 35)',
-      card: 'oklch(20% 0.04 25)',
-      cardForeground: 'oklch(92% 0.02 35)',
-      border: 'oklch(30% 0.04 30)',
-      ring: 'oklch(72% 0.15 35)',
-      radius: '0.5rem',
-    },
-  },
-  {
-    name: 'Forest Atelier',
-    fontId: 'merriweather',
-    light: {
-      background: 'oklch(97% 0.02 145)',
-      foreground: 'oklch(18% 0.03 150)',
-      primary: 'oklch(42% 0.14 150)',
-      primaryForeground: 'oklch(98% 0 0)',
-      accent: 'oklch(88% 0.07 140)',
-      accentForeground: 'oklch(18% 0.03 150)',
-      card: 'oklch(98% 0.02 145)',
-      cardForeground: 'oklch(18% 0.03 150)',
-      border: 'oklch(86% 0.04 145)',
-      ring: 'oklch(50% 0.12 150)',
-      radius: '0.65rem',
-    },
-    dark: {
-      background: 'oklch(14% 0.03 150)',
-      foreground: 'oklch(92% 0.02 140)',
-      primary: 'oklch(70% 0.12 150)',
-      primaryForeground: 'oklch(14% 0.03 150)',
-      accent: 'oklch(26% 0.05 145)',
-      accentForeground: 'oklch(92% 0.02 140)',
-      card: 'oklch(18% 0.03 150)',
-      cardForeground: 'oklch(92% 0.02 140)',
-      border: 'oklch(30% 0.04 150)',
-      ring: 'oklch(65% 0.1 150)',
-      radius: '0.65rem',
     },
   },
   {
@@ -826,9 +423,9 @@ const buildPriceAmounts = (baseCents: number, multiplier: number) => {
   }
 }
 
-const buildTheme = (storeName: string, themeIndex: number) => {
-  const preset = THEME_PRESETS[themeIndex % THEME_PRESETS.length]
-  const logoSeed = slugify(storeName || `store-${themeIndex}`)
+const buildTheme = (siteName: string) => {
+  const preset = THEME_PRESETS[0]
+  const logoSeed = slugify(siteName)
 
   return {
     light: preset.light,
@@ -836,30 +433,26 @@ const buildTheme = (storeName: string, themeIndex: number) => {
     fontId: preset.fontId,
     branding: {
       logoUrl: imageUrl(`logo-${logoSeed}`, 320, 200),
-      logoAlt: `${storeName} logo`,
+      logoAlt: `${siteName} logo`,
       logoWidth: 140,
       logoHeight: 140,
       faviconUrl: imageUrl(`favicon-${logoSeed}`, 64, 64),
+      slogan: 'Calidad para todos los dias',
       contactEmail: faker.internet.email().toLowerCase(),
       contactPhone: faker.phone.number(),
       contactAddress: faker.location.streetAddress(),
-      socialFacebook: `https://facebook.com/${slugify(storeName)}`,
-      socialInstagram: `https://instagram.com/${slugify(storeName)}`,
-      socialTwitter: `https://x.com/${slugify(storeName)}`,
+      socialFacebook: `https://facebook.com/${logoSeed}`,
+      socialInstagram: `https://instagram.com/${logoSeed}`,
+      socialTwitter: `https://x.com/${logoSeed}`,
     },
   }
 }
 
-const buildSettings = (storeName: string) => ({
-  storeName,
-  supportEmail: faker.internet.email().toLowerCase(),
-  supportPhone: faker.phone.number(),
-  locale: faker.location.countryCode(),
-  taxRate: randomFloat(0, 0.2, 2),
-  shipping: {
-    provider: faker.company.name(),
-    flatRate: faker.number.int({ min: 5, max: 25 }),
-    freeOver: faker.number.int({ min: 75, max: 200 }),
+const buildContactSettings = () => ({
+  contact: {
+    email: faker.internet.email().toLowerCase(),
+    phoneNumber: faker.phone.number(),
+    address: `${faker.location.streetAddress()}, ${faker.location.city()}`,
   },
 })
 
@@ -888,28 +481,21 @@ async function main() {
     faker.seed(Number(process.env.FAKER_SEED))
   }
 
-  const storeCategories = await Promise.all(
-    STORE_CATEGORIES.map((category) =>
-      prisma.storeCategory.upsert({
-        where: { slug: category.slug },
-        update: {
-          name: category.name,
-          description: category.description,
-          icon: category.icon,
-          isActive: true,
-        },
-        create: {
-          name: category.name,
-          slug: category.slug,
-          description: category.description,
-          icon: category.icon,
-          isActive: true,
-        },
-      }),
-    ),
-  )
+  const siteName = process.env.SEED_SITE_NAME || 'Una Ganga'
 
-  const globalCurrencies = await Promise.all(
+  await prisma.siteSettings.upsert({
+    where: { id: 'singleton' },
+    update: {},
+    create: {
+      id: 'singleton',
+      name: siteName,
+      description: faker.company.catchPhrase(),
+      theme: buildTheme(siteName),
+      settings: buildContactSettings(),
+    },
+  })
+
+  const currencies = await Promise.all(
     CURRENCIES.map((currency) =>
       prisma.currency.upsert({
         where: { code: currency.code },
@@ -930,15 +516,12 @@ async function main() {
     ),
   )
 
-  const storeSlugSet = new Set<string>()
-  const users: Array<{ id: string; email: string; name: string }> = []
-
   for (let index = 0; index < CONFIG.users; index += 1) {
     const firstName = faker.person.firstName()
     const lastName = faker.person.lastName()
     const email = faker.internet.email({ firstName, lastName }).toLowerCase()
 
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         id: faker.string.uuid(),
         name: `${firstName} ${lastName}`,
@@ -946,268 +529,205 @@ async function main() {
         emailVerified: faker.datatype.boolean(),
         image: faker.image.avatar(),
         role: index === 0 ? 'ADMIN' : 'EDITOR',
-        isPaid: faker.datatype.boolean(),
+      },
+    })
+  }
+
+  const activeCurrencies = currencies.filter((currency: any) =>
+    ACTIVE_CURRENCY_CODES.has(currency.code),
+  )
+  const pricingCurrencies = pickMany(
+    activeCurrencies,
+    randomInt(
+      CONFIG.pricingCurrencies.min,
+      Math.min(CONFIG.pricingCurrencies.max, activeCurrencies.length),
+    ),
+  )
+
+  const categorySlugSet = new Set<string>()
+  const categoryNameSet = new Set<string>()
+  const subcategorySlugSet = new Set<string>()
+  const subcategoryNameSet = new Set<string>()
+  const productSlugSet = new Set<string>()
+
+  for (let categoryIndex = 0; categoryIndex < CONFIG.categories; categoryIndex += 1) {
+    let categoryName = `${faker.commerce.department()} ${faker.commerce.productAdjective()}`
+    while (categoryNameSet.has(categoryName)) {
+      categoryName = `${faker.commerce.department()} ${faker.commerce.productAdjective()}`
+    }
+    categoryNameSet.add(categoryName)
+
+    const category = await prisma.category.create({
+      data: {
+        name: categoryName,
+        slug: uniqueSlug(categoryName, categorySlugSet),
+        description: faker.lorem.sentence(),
+        icon: faker.helpers.arrayElement([
+          'shopping-bag',
+          'cpu',
+          'sofa',
+          'shirt',
+          'camera',
+          'sparkles',
+        ]),
+        isActive: true,
+        filters: buildFilters(),
       },
     })
 
-    users.push({ id: user.id, email: user.email, name: user.name })
-  }
-
-  let storeThemeIndex = 0
-
-  for (const user of users) {
-    const storeCount = randomInt(CONFIG.storesPerUser.min, CONFIG.storesPerUser.max)
-
-    for (let storeIndex = 0; storeIndex < storeCount; storeIndex += 1) {
-      const storeName = faker.company.name()
-      const storeSlug = uniqueSlug(storeName, storeSlugSet)
-      const themeIndex = storeThemeIndex % THEME_PRESETS.length
-      storeThemeIndex += 1
-
-      const store = await prisma.store.create({
-        data: {
-          name: storeName,
-          slug: storeSlug,
-          description: faker.company.catchPhrase(),
-          isActive: true,
-          ownerId: user.id,
-          theme: buildTheme(storeName, themeIndex),
-        },
-      })
-
-      await prisma.settings.create({
-        data: {
-          storeId: store.id,
-          settings: buildSettings(storeName),
-        },
-      })
-
-      const assignedCategories = pickMany(
-        storeCategories,
-        randomInt(2, Math.min(4, storeCategories.length)),
-      )
-
-      await prisma.storeCategoryAssignment.createMany({
-        data: assignedCategories.map((category) => ({
-          storeId: store.id,
-          storeCategoryId: category.id,
-        })),
-      })
-
-      const currencies = globalCurrencies
-      if (currencies.length > 0) {
-        await prisma.storeCurrency.createMany({
-          data: currencies.map((currency) => ({
-            storeId: store.id,
-            currencyId: currency.id,
-            isEnabled: ACTIVE_CURRENCY_CODES.has(currency.code),
-          })),
-        })
+    for (
+      let subcategoryIndex = 0;
+      subcategoryIndex < CONFIG.subcategoriesPerCategory;
+      subcategoryIndex += 1
+    ) {
+      let subcategoryName = `${faker.commerce.productAdjective()} ${faker.commerce.productMaterial()}`
+      while (subcategoryNameSet.has(subcategoryName)) {
+        subcategoryName = `${faker.commerce.productAdjective()} ${faker.commerce.productMaterial()}`
       }
-      const pricingCurrencies =
-        currencies.length > 0
-          ? pickMany(currencies, randomInt(2, Math.min(4, currencies.length)))
-          : []
+      subcategoryNameSet.add(subcategoryName)
 
-      const categorySlugSet = new Set<string>()
-      const categoryNameSet = new Set<string>()
-      const subcategorySlugSet = new Set<string>()
-      const subcategoryNameSet = new Set<string>()
-      const productSlugSet = new Set<string>()
+      const subcategory = await prisma.subcategory.create({
+        data: {
+          name: subcategoryName,
+          slug: uniqueSlug(subcategoryName, subcategorySlugSet),
+          description: faker.lorem.sentence(),
+          isActive: true,
+          filters: buildFilters(),
+          categoryId: category.id,
+        },
+      })
 
-      for (let categoryIndex = 0; categoryIndex < CONFIG.categoriesPerStore; categoryIndex += 1) {
-        let categoryName = `${faker.commerce.department()} ${faker.commerce.productAdjective()}`
-        while (categoryNameSet.has(categoryName)) {
-          categoryName = `${faker.commerce.department()} ${faker.commerce.productAdjective()}`
-        }
-        categoryNameSet.add(categoryName)
+      for (
+        let productIndex = 0;
+        productIndex < CONFIG.productsPerSubcategory;
+        productIndex += 1
+      ) {
+        const productName = `${faker.commerce.productAdjective()} ${faker.commerce.product()}`
+        const productSlug = uniqueSlug(productName, productSlugSet)
 
-        const category = await prisma.category.create({
+        const product = await prisma.product.create({
           data: {
-            name: categoryName,
-            slug: uniqueSlug(categoryName, categorySlugSet),
-            description: faker.lorem.sentence(),
-            icon: faker.helpers.arrayElement([
-              'shopping-bag',
-              'cpu',
-              'sofa',
-              'shirt',
-              'camera',
-              'sparkles',
-            ]),
-            isActive: true,
-            filters: buildFilters(),
-            storeId: store.id,
+            name: productName,
+            slug: productSlug,
+            description: faker.commerce.productDescription(),
+            shortDescription: faker.lorem.sentence(),
+            specifications: buildSpecifications(),
+            filterValues: buildFilterValues(),
+            tags: buildTags(),
+            metaData: buildMetaData(productName),
+            isActive: faker.datatype.boolean(),
+            inStock: faker.datatype.boolean(),
+            featured: faker.number.int({ min: 1, max: 100 }) <= 20,
+            categoryId: category.id,
+            subcategoryId: subcategory.id,
           },
         })
 
-        for (
-          let subcategoryIndex = 0;
-          subcategoryIndex < CONFIG.subcategoriesPerCategory;
-          subcategoryIndex += 1
-        ) {
-          let subcategoryName = `${faker.commerce.productAdjective()} ${faker.commerce.productMaterial()}`
-          while (subcategoryNameSet.has(subcategoryName)) {
-            subcategoryName = `${faker.commerce.productAdjective()} ${faker.commerce.productMaterial()}`
-          }
-          subcategoryNameSet.add(subcategoryName)
+        const productImageCount = randomInt(
+          CONFIG.productImages.min,
+          CONFIG.productImages.max,
+        )
 
-          const subcategory = await prisma.subcategory.create({
+        await prisma.media.createMany({
+          data: Array.from({ length: productImageCount }).map((_, imageIndex) => ({
+            alt: `${productName} image ${imageIndex + 1}`,
+            url: imageUrl(`${product.id}-${imageIndex}`),
+            productId: product.id,
+          })),
+        })
+
+        const basePriceCents = randomInt(1500, 120000)
+
+        for (const [currencyIndex, currency] of pricingCurrencies.entries()) {
+          const multiplier = currencyIndex === 0 ? 1 : randomFloat(0.8, 1.3, 2)
+
+          const { amount, saleAmount } = buildPriceAmounts(
+            basePriceCents,
+            multiplier,
+          )
+
+          await prisma.price.create({
             data: {
-              name: subcategoryName,
-              slug: uniqueSlug(subcategoryName, subcategorySlugSet),
-              description: faker.lorem.sentence(),
-              isActive: true,
-              filters: buildFilters(),
-              storeId: store.id,
-              categoryId: category.id,
+              amount,
+              saleAmount,
+              currencyId: currency.id,
+              productId: product.id,
+              isDefault: currencyIndex === 0,
+              taxIncluded: faker.datatype.boolean(),
+            },
+          })
+        }
+
+        const variantCount = randomInt(
+          CONFIG.variantsPerProduct.min,
+          CONFIG.variantsPerProduct.max,
+        )
+
+        for (let variantIndex = 0; variantIndex < variantCount; variantIndex += 1) {
+          const color = faker.helpers.arrayElement(COLOR_OPTIONS)
+          const size = faker.helpers.arrayElement(SIZE_OPTIONS)
+          const variantName = `${color.label} / ${size.label}`
+
+          const variant = await prisma.productVariant.create({
+            data: {
+              name: variantName,
+              sku: faker.string.alphanumeric({ length: 12, casing: 'upper' }),
+              stock: randomInt(0, 80),
+              attributes: {
+                color: color.value,
+                size: size.value,
+              },
+              isActive: faker.datatype.boolean(),
+              image: imageUrl(`${product.id}-${variantIndex}-primary`, 800, 800),
+              description: faker.lorem.sentences(2),
+              shortDescription: faker.lorem.sentence(),
+              specifications: buildSpecifications(),
+              productId: product.id,
             },
           })
 
-          for (
-            let productIndex = 0;
-            productIndex < CONFIG.productsPerSubcategory;
-            productIndex += 1
-          ) {
-            const productName = `${faker.commerce.productAdjective()} ${faker.commerce.product()}`
-            const productSlug = uniqueSlug(productName, productSlugSet)
+          const variantImageCount = randomInt(
+            CONFIG.variantImages.min,
+            CONFIG.variantImages.max,
+          )
 
-            const product = await prisma.product.create({
-              data: {
-                name: productName,
-                slug: productSlug,
-                description: faker.commerce.productDescription(),
-                shortDescription: faker.lorem.sentence(),
-                specifications: buildSpecifications(),
-                filterValues: buildFilterValues(),
-                tags: buildTags(),
-                metaData: buildMetaData(productName),
-                isActive: faker.datatype.boolean(),
-                inStock: faker.datatype.boolean(),
-                featured: faker.number.int({ min: 1, max: 100 }) <= 20,
-                storeId: store.id,
-                categoryId: category.id,
-                subcategoryId: subcategory.id,
-              },
-            })
-
-            const productImageCount = randomInt(
-              CONFIG.productImages.min,
-              CONFIG.productImages.max,
-            )
-
+          if (variantImageCount > 0) {
             await prisma.media.createMany({
-              data: Array.from({ length: productImageCount }).map((_, imageIndex) => ({
-                alt: `${productName} image ${imageIndex + 1}`,
-                url: imageUrl(`${product.id}-${imageIndex}`),
-                productId: product.id,
+              data: Array.from({ length: variantImageCount }).map((_, imageIndex) => ({
+                alt: `${productName} variant ${variantName} image ${imageIndex + 1}`,
+                url: imageUrl(`${variant.id}-${imageIndex}`, 900, 900),
+                productVariantId: variant.id,
               })),
             })
+          }
 
-            const basePriceCents = randomInt(1500, 120000)
+          for (const [currencyIndex, currency] of pricingCurrencies.entries()) {
+            const multiplier =
+              currencyIndex === 0 ? 1 : randomFloat(0.8, 1.3, 2)
 
-            for (const [currencyIndex, currency] of pricingCurrencies.entries()) {
-              const multiplier =
-                currencyIndex === 0
-                  ? 1
-                  : randomFloat(0.8, 1.3, 2)
-
-              const { amount, saleAmount } = buildPriceAmounts(basePriceCents, multiplier)
-
-              await prisma.price.create({
-                data: {
-                  amount,
-                  saleAmount,
-                  currencyId: currency.id,
-                  storeId: store.id,
-                  productId: product.id,
-                  isDefault: currencyIndex === 0,
-                  taxIncluded: faker.datatype.boolean(),
-                },
-              })
-            }
-
-            const variantCount = randomInt(
-              CONFIG.variantsPerProduct.min,
-              CONFIG.variantsPerProduct.max,
+            const { amount, saleAmount } = buildPriceAmounts(
+              Math.round(basePriceCents * 1.05),
+              multiplier,
             )
 
-            for (let variantIndex = 0; variantIndex < variantCount; variantIndex += 1) {
-              const color = faker.helpers.arrayElement(COLOR_OPTIONS)
-              const size = faker.helpers.arrayElement(SIZE_OPTIONS)
-              const variantName = `${color.label} / ${size.label}`
-
-              const variant = await prisma.productVariant.create({
-                data: {
-                  name: variantName,
-                  sku: faker.string.alphanumeric({ length: 12, casing: 'upper' }),
-                  stock: randomInt(0, 80),
-                  attributes: {
-                    color: color.value,
-                    size: size.value,
-                  },
-                  isActive: faker.datatype.boolean(),
-                  image: imageUrl(`${product.id}-${variantIndex}-primary`, 800, 800),
-                  description: faker.lorem.sentences(2),
-                  shortDescription: faker.lorem.sentence(),
-                  specifications: buildSpecifications(),
-                  productId: product.id,
-                },
-              })
-
-              const variantImageCount = randomInt(
-                CONFIG.variantImages.min,
-                CONFIG.variantImages.max,
-              )
-
-              if (variantImageCount > 0) {
-                await prisma.media.createMany({
-                  data: Array.from({ length: variantImageCount }).map((_, imageIndex) => ({
-                    alt: `${productName} variant ${variantName} image ${imageIndex + 1}`,
-                    url: imageUrl(`${variant.id}-${imageIndex}`, 900, 900),
-                    productVariantId: variant.id,
-                  })),
-                })
-              }
-
-              for (const [currencyIndex, currency] of pricingCurrencies.entries()) {
-                const multiplier =
-                  currencyIndex === 0
-                  ? 1
-                  : randomFloat(0.8, 1.3, 2)
-
-                const { amount, saleAmount } = buildPriceAmounts(
-                  Math.round(basePriceCents * 1.05),
-                  multiplier,
-                )
-
-                await prisma.price.create({
-                  data: {
-                    amount,
-                    saleAmount,
-                    currencyId: currency.id,
-                    storeId: store.id,
-                    productVariantId: variant.id,
-                    isDefault: currencyIndex === 0,
-                    taxIncluded: faker.datatype.boolean(),
-                  },
-                })
-              }
-            }
+            await prisma.price.create({
+              data: {
+                amount,
+                saleAmount,
+                currencyId: currency.id,
+                productVariantId: variant.id,
+                isDefault: currencyIndex === 0,
+                taxIncluded: faker.datatype.boolean(),
+              },
+            })
           }
         }
       }
-
-      await prisma.store.update({
-        where: { id: store.id },
-        data: { updatedAt: new Date() },
-      })
     }
   }
 
   const [
     userCount,
-    storeCount,
     categoryCount,
     subcategoryCount,
     productCount,
@@ -1216,7 +736,6 @@ async function main() {
     mediaCount,
   ] = await prisma.$transaction([
     prisma.user.count(),
-    prisma.store.count(),
     prisma.category.count(),
     prisma.subcategory.count(),
     prisma.product.count(),
@@ -1227,7 +746,6 @@ async function main() {
 
   console.log('Seed summary:', {
     users: userCount,
-    stores: storeCount,
     categories: categoryCount,
     subcategories: subcategoryCount,
     products: productCount,

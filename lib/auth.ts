@@ -25,12 +25,6 @@ export const auth = betterAuth({
         input: false,
         returned: true,
       },
-      isPaid: {
-        type: "boolean",
-        required: false,
-        defaultValue: false,
-        input: false,
       },
-    },
   },
 });

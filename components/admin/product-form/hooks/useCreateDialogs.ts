@@ -4,7 +4,7 @@ import { trpc } from "@/trpc/client";
 import { getErrorMessage } from "@/lib/error-messages";
 import { generateSlug } from "../utils";
 
-export function useCreateCategory(storeSlug?: string) {
+export function useCreateCategory() {
     const [isOpen, setIsOpen] = useState(false);
     const [name, setName] = useState("");
     const createMutation = trpc.admin.categories.create.useMutation();
@@ -21,7 +21,6 @@ export function useCreateCategory(storeSlug?: string) {
             const category = await createMutation.mutateAsync({
                 name,
                 slug,
-                storeSlug,
             });
             setName("");
             setIsOpen(false);
@@ -44,7 +43,7 @@ export function useCreateCategory(storeSlug?: string) {
     };
 }
 
-export function useCreateSubcategory(storeSlug?: string) {
+export function useCreateSubcategory() {
     const [isOpen, setIsOpen] = useState(false);
     const [name, setName] = useState("");
     const createMutation = trpc.admin.subcategories.create.useMutation();
@@ -69,7 +68,6 @@ export function useCreateSubcategory(storeSlug?: string) {
                 name,
                 slug,
                 categoryId,
-                storeSlug,
             });
             setName("");
             setIsOpen(false);
@@ -92,7 +90,7 @@ export function useCreateSubcategory(storeSlug?: string) {
     };
 }
 
-export function useCreateCurrency(storeSlug?: string) {
+export function useCreateCurrency() {
     const [isOpen, setIsOpen] = useState(false);
     const [data, setData] = useState({
         name: "",
@@ -113,7 +111,6 @@ export function useCreateCurrency(storeSlug?: string) {
                 name: data.name,
                 code: data.code.toUpperCase(),
                 symbol: data.symbol,
-                storeSlug,
             });
             setData({ name: "", code: "", symbol: "" });
             setIsOpen(false);

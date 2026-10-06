@@ -12,104 +12,52 @@ import {
 } from "@/lib/error-codes";
 import { revalidatePath } from "next/cache";
 
-const resolveStoreId = async (
-  storeId: string | undefined,
-  storeSlug: string | undefined,
-  userId: string,
-  activeStoreId?: string,
-) => {
-  if (storeId) return storeId;
-  if (storeSlug) return await getStoreIdFromSlug(storeSlug, userId);
-  if (activeStoreId) {
-    const store = await prisma.store.findFirst({
-      where: { id: activeStoreId, ownerId: userId },
-    });
-    if (store) return store.id;
-  }
-
-
-  const store = await prisma.store.findFirst({
-    where: { ownerId: userId },
-    orderBy: { createdAt: "asc" },
+const getEnabledCurrencies = async () => {
+  const currencies = await prisma.currency.findMany({
+    where: { isActive: true },
   });
-  if (!store) {
-    throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-      message: "Store not found for this user",
-    });
-  }
-  return store.id;
-};
 
-const getStoreIdFromSlug = async (slug: string, userId: string) => {
-  const store = await prisma.store.findFirst({
-    where: { slug, ownerId: userId },
-  });
-  if (!store) {
-    throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-      message: "Store not found for this user",
-    });
-  }
-  return store.id;
+  return new Map(currencies.map((currency) => [currency.code, currency.id]));
 };
 
 export const adminProductsRouter = router({
-  list: protectedProcedure
-    .input(
-      z
-        .object({ storeId: z.string().optional(), storeSlug: z.string().optional() })
-        .optional(),
-    )
-    .query(async ({ input, ctx }) => {
-      const storeId = await resolveStoreId(
-        input?.storeId,
-        input?.storeSlug,
-        ctx.session.user.id,
-        ctx.activeStoreId,
-      );
-      console.log(storeId, "id");
-      const products = await prisma.product.findMany({
-        where: { storeId },
-        include: {
-          category: true,
-          prices: { include: { currency: true } },
-          coverImages: true,
-          variants: {
-            include: {
-              prices: { include: { currency: true } },
-            },
+  list: protectedProcedure.query(async () => {
+    const products = await prisma.product.findMany({
+      include: {
+        category: true,
+        prices: { include: { currency: true } },
+        coverImages: true,
+        variants: {
+          include: {
+            prices: { include: { currency: true } },
           },
         },
-        orderBy: { id: "desc" },
-      });
+      },
+      orderBy: { id: "desc" },
+    });
 
-      return products.map((product) => ({
-        ...product,
-        prices: product.prices.map((p) => ({
+    return products.map((product) => ({
+      ...product,
+      prices: product.prices.map((p) => ({
+        ...p,
+        amount: toNumber(p.amount),
+        saleAmount: p.saleAmount == null ? null : toNumber(p.saleAmount),
+      })),
+      variants: product.variants.map((v) => ({
+        ...v,
+        prices: v.prices.map((p) => ({
           ...p,
           amount: toNumber(p.amount),
           saleAmount: p.saleAmount == null ? null : toNumber(p.saleAmount),
         })),
-        variants: product.variants.map((v) => ({
-          ...v,
-          prices: v.prices.map((p) => ({
-            ...p,
-            amount: toNumber(p.amount),
-            saleAmount: p.saleAmount == null ? null : toNumber(p.saleAmount),
-          })),
-        })),
-      }));
-    }),
+      })),
+    }));
+  }),
 
   create: protectedProcedure
     .input(productSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const payload = input;
-      const storeId = await resolveStoreId(
-        payload.storeId,
-        payload.storeSlug,
-        ctx.session.user.id,
-        ctx.activeStoreId,
-      );
 
       // Normalize empty strings to undefined
       const normalizedCategoryId = payload.categoryId?.trim() || undefined;
@@ -123,7 +71,6 @@ export const adminProductsRouter = router({
               { id: normalizedSubcategoryId },
               { slug: normalizedSubcategoryId },
             ],
-            storeId,
           },
         });
         if (!subcategory) {
@@ -137,29 +84,19 @@ export const adminProductsRouter = router({
 
       // Only validate category if categoryId is provided
       if (normalizedCategoryId) {
-        const category = await prisma.category.findFirst({
-          where: { id: normalizedCategoryId, storeId },
+        const category = await prisma.category.findUnique({
+          where: { id: normalizedCategoryId },
         });
         if (!category) {
           throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-            message: "Category not found for this store",
+            message: "Category not found",
             details: { resource: "category", id: normalizedCategoryId },
           });
         }
       }
 
       try {
-        const storeCurrencies = await prisma.storeCurrency.findMany({
-          where: {
-            storeId,
-            isEnabled: true,
-            currency: { isActive: true },
-          },
-          include: { currency: true },
-        });
-        const currencyMap = new Map(
-          storeCurrencies.map((c) => [c.currency.code, c.currency.id]),
-        );
+        const currencyMap = await getEnabledCurrencies();
         const allowedCurrencyCodes = new Set(currencyMap.keys());
         const requestedCurrencyCodes = new Set<string>();
 
@@ -182,15 +119,13 @@ export const adminProductsRouter = router({
         );
         if (inactiveCurrencies.length > 0) {
           throw createErrorWithCode(ErrorCode.INVALID_INPUT, {
-            message:
-              "Some prices use currencies that are not enabled for this store.",
+            message: "Some prices use currencies that are not enabled.",
             details: { currencies: inactiveCurrencies },
           });
         }
 
         const product = await prisma.product.create({
           data: {
-            storeId,
             name: payload.name,
             slug: payload.slug,
             description: payload.description,
@@ -238,7 +173,6 @@ export const adminProductsRouter = router({
                         currencyId,
                         isDefault: p.isDefault ?? false,
                         taxIncluded: p.taxIncluded ?? true,
-                        storeId,
                       };
                     })
                     .filter((p: any) => p !== null),
@@ -260,18 +194,14 @@ export const adminProductsRouter = router({
                   productId: product.id,
                   isDefault: p.isDefault ?? false,
                   taxIncluded: p.taxIncluded ?? true,
-                  storeId,
                 },
               });
             }
           }
         }
 
-        // Revalidate the store page to refresh the product listing
-        const store = await prisma.store.findUnique({ where: { id: storeId } });
-        if (store) {
-          revalidatePath(`/store/${store.slug}`);
-        }
+        // Revalidate the catalog page to refresh the product listing
+        revalidatePath("/");
 
         return product;
       } catch (error: any) {
@@ -290,26 +220,14 @@ export const adminProductsRouter = router({
     }),
 
   get: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        storeId: z.string().optional(),
-        storeSlug: z.string().optional(),
-      }),
-    )
-    .query(async ({ input, ctx }) => {
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
       const { id } = input;
-      const storeId = await resolveStoreId(
-        input.storeId,
-        input.storeSlug,
-        ctx.session.user.id,
-        ctx.activeStoreId,
-      );
 
       const [product, allCategories, allSubcategories, allCurrencies] =
         await Promise.all([
-          prisma.product.findFirst({
-            where: { id, storeId },
+          prisma.product.findUnique({
+            where: { id },
             include: {
               coverImages: true,
               category: { include: { subcategories: true } },
@@ -324,27 +242,20 @@ export const adminProductsRouter = router({
             },
           }),
           prisma.category.findMany({
-            where: { storeId },
             orderBy: { name: "asc" },
           }),
           prisma.subcategory.findMany({
-            where: { storeId },
             orderBy: { name: "asc" },
           }),
-          prisma.storeCurrency.findMany({
-            where: {
-              storeId,
-              isEnabled: true,
-              currency: { isActive: true },
-            },
-            include: { currency: true },
-            orderBy: { currency: { code: "asc" } },
+          prisma.currency.findMany({
+            where: { isActive: true },
+            orderBy: { code: "asc" },
           }),
         ]);
 
       if (!product) {
         throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-          message: "Product not found for this store",
+          message: "Product not found",
           details: { resource: "product", id },
         });
       }
@@ -372,7 +283,7 @@ export const adminProductsRouter = router({
         },
         categories: allCategories,
         subcategories: allSubcategories,
-        currencies: allCurrencies.map((item) => item.currency),
+        currencies: allCurrencies,
       };
     }),
 
@@ -380,19 +291,11 @@ export const adminProductsRouter = router({
     .input(
       z.object({
         id: z.string(),
-        storeId: z.string().optional(),
-        storeSlug: z.string().optional(),
         data: productUpdateSchema,
       }),
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const { id, data } = input;
-      const storeId = await resolveStoreId(
-        input.storeId ?? data.storeId,
-        input.storeSlug ?? data.storeSlug,
-        ctx.session.user.id,
-        ctx.activeStoreId,
-      );
 
       const rawCategoryId = data.categoryId;
       const rawSubcategoryId = data.subcategoryId;
@@ -415,12 +318,12 @@ export const adminProductsRouter = router({
       let resolvedSubcategoryId: string | null | undefined = undefined;
 
       if (!shouldClearCategory && typeof normalizedCategoryId === "string") {
-        const category = await prisma.category.findFirst({
-          where: { id: normalizedCategoryId, storeId },
+        const category = await prisma.category.findUnique({
+          where: { id: normalizedCategoryId },
         });
         if (!category) {
           throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-            message: "Category not found for this store",
+            message: "Category not found",
             details: { resource: "category", id: normalizedCategoryId },
           });
         }
@@ -433,7 +336,6 @@ export const adminProductsRouter = router({
         const subcategory = await prisma.subcategory.findFirst({
           where: {
             OR: [{ id: normalizedSubcategoryId }, { slug: normalizedSubcategoryId }],
-            storeId,
           },
         });
         if (!subcategory) {
@@ -449,23 +351,12 @@ export const adminProductsRouter = router({
         coverImages,
         prices,
         variants,
-        storeId: _ignoredStoreId,
         categoryId: _categoryId,
         subcategoryId: _subcategoryId,
         ...restOfData
       } = data;
 
-      const storeCurrencies = await prisma.storeCurrency.findMany({
-        where: {
-          storeId,
-          isEnabled: true,
-          currency: { isActive: true },
-        },
-        include: { currency: true },
-      });
-      const currencyMap = new Map(
-        storeCurrencies.map((c) => [c.currency.code, c.currency.id]),
-      );
+      const currencyMap = await getEnabledCurrencies();
       const allowedCurrencyCodes = new Set(currencyMap.keys());
       const requestedCurrencyCodes = new Set<string>();
 
@@ -488,19 +379,16 @@ export const adminProductsRouter = router({
       );
       if (inactiveCurrencies.length > 0) {
         throw createErrorWithCode(ErrorCode.INVALID_INPUT, {
-          message:
-            "Some prices use currencies that are not enabled for this store.",
+          message: "Some prices use currencies that are not enabled.",
           details: { currencies: inactiveCurrencies },
         });
       }
 
       try {
-        const existingProduct = await prisma.product.findFirst({
-          where: { id, storeId },
-        });
+        const existingProduct = await prisma.product.findUnique({ where: { id } });
         if (!existingProduct) {
           throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-            message: "Product not found for this store",
+            message: "Product not found",
             details: { resource: "product", id },
           });
         }
@@ -555,7 +443,6 @@ export const adminProductsRouter = router({
                   productId: id,
                   isDefault: p.isDefault ?? false,
                   taxIncluded: p.taxIncluded ?? true,
-                  storeId,
                 },
               });
             }
@@ -647,7 +534,6 @@ export const adminProductsRouter = router({
                       productVariantId: variantId,
                       isDefault: p.isDefault ?? false,
                       taxIncluded: p.taxIncluded ?? true,
-                      storeId,
                     },
                   });
                 }
@@ -656,11 +542,8 @@ export const adminProductsRouter = router({
           }
         }
 
-        // Revalidate the store page to refresh the product listing
-        const store = await prisma.store.findUnique({ where: { id: storeId } });
-        if (store) {
-          revalidatePath(`/store/${store.slug}`);
-        }
+        // Revalidate the catalog page to refresh the product listing
+        revalidatePath("/");
 
         return product;
       } catch (error: any) {
@@ -679,35 +562,20 @@ export const adminProductsRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        storeId: z.string().optional(),
-        storeSlug: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const storeId = await resolveStoreId(
-        input.storeId,
-        input.storeSlug,
-        ctx.session.user.id,
-        ctx.activeStoreId,
-      );
-      const existing = await prisma.product.findFirst({
-        where: { id: input.id, storeId },
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      const existing = await prisma.product.findUnique({
+        where: { id: input.id },
       });
       if (!existing) {
         throw createErrorWithCode(ErrorCode.ITEM_NOT_FOUND, {
-          message: "Product not found for this store",
+          message: "Product not found",
         });
       }
       await prisma.product.delete({ where: { id: input.id } });
 
-      // Revalidate the store page to refresh the product listing
-      const store = await prisma.store.findUnique({ where: { id: storeId } });
-      if (store) {
-        revalidatePath(`/store/${store.slug}`);
-      }
+      // Revalidate the catalog page to refresh the product listing
+      revalidatePath("/");
 
       return { success: true };
     }),

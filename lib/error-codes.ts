@@ -26,7 +26,6 @@ export const ErrorCode = {
 
   // Business Logic Errors
   INVALID_STATE: "INVALID_STATE",
-  STORE_LIMIT_EXCEEDED: "STORE_LIMIT_EXCEEDED",
   OPERATION_FAILED: "OPERATION_FAILED",
 
   // Network/System Errors
@@ -93,8 +92,7 @@ export function createErrorWithCode(
     code === ErrorCode.MISSING_REQUIRED_FIELD ||
     code === ErrorCode.INVALID_FILE_TYPE ||
     code === ErrorCode.FILE_TOO_LARGE ||
-    code === ErrorCode.INVALID_STATE ||
-    code === ErrorCode.STORE_LIMIT_EXCEEDED
+    code === ErrorCode.INVALID_STATE
   ) {
     defaultTrpcCode = "BAD_REQUEST";
   } else if (

@@ -13,8 +13,7 @@ import {
   Users,
   Settings,
   Palette,
-  ArrowLeft,
-  SettingsIcon,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +31,6 @@ import { Role } from "@/generated/prisma/enums";
 import { trpc } from "@/trpc/client";
 import { LogoutDialog } from "@/components/ui/logout-dialog";
 import Image from "next/image";
-import { storeSchemaClient } from "@/lib/types";
 
 export function AdminNav() {
   const pathname = usePathname();
@@ -40,74 +38,63 @@ export function AdminNav() {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  const segments = pathname.split("/").filter(Boolean);
-  const storeSlug =
-    segments[0] === "admin" && segments[1] === "stores" ? segments[2] : null;
-  const storeBase = storeSlug ? `/admin/stores/${storeSlug}` : "/admin/stores";
-
-  const { data: store } = trpc.admin.stores.getBySlug.useQuery(
-    storeSlug || "",
-    {
-      enabled: !!storeSlug,
-    },
-  );
-
-  const storeParsed = storeSchemaClient.safeParse(store);
-  const storeData = storeParsed.success ? storeParsed.data : undefined;
+  const { data: site } = trpc.admin.site.get.useQuery();
+  const branding = (site?.theme as { branding?: { logoUrl?: string; logoAlt?: string } } | undefined)
+    ?.branding;
 
   const navigation = [
     {
       name: "Panel de Control",
-      href: storeSlug ? storeBase : "/admin/stores",
+      href: "/admin",
       icon: LayoutDashboard,
       exact: true,
     },
     {
       name: "Productos",
-      href: storeSlug ? `${storeBase}/products` : "/admin/stores",
+      href: "/admin/products",
       icon: Package,
     },
     {
       name: "Categorías",
-      href: storeSlug ? `${storeBase}/categories` : "/admin/stores",
+      href: "/admin/categories",
       icon: FolderTree,
     },
     {
       name: "Subcategorías",
-      href: storeSlug ? `${storeBase}/subcategories` : "/admin/stores",
+      href: "/admin/subcategories",
       icon: FolderTree,
     },
     {
       name: "Media",
-      href: storeSlug ? `${storeBase}/media` : "/admin/stores",
+      href: "/admin/media",
       icon: ImageIcon,
     },
     {
       name: "Monedas",
-      href: storeSlug ? `${storeBase}/currencies` : "/admin/stores",
+      href: "/admin/currencies",
       icon: DollarSign,
     },
     {
       name: "Tema",
-      href: storeSlug ? `${storeBase}/theme` : "/admin/stores",
+      href: "/admin/theme",
       icon: Palette,
     },
     {
-      name: "Configuración",
-      href: storeSlug ? `${storeBase}/branding` : "/admin/stores",
-      icon: SettingsIcon,
+      name: "Identidad",
+      href: "/admin/branding",
+      icon: Store,
     },
   ];
 
   const adminNavigation = [
     {
-      name: "Users",
-      href: storeSlug ? `${storeBase}/users` : "/admin/stores",
+      name: "Usuarios",
+      href: "/admin/users",
       icon: Users,
     },
     {
       name: "Configuración",
-      href: storeSlug ? `${storeBase}/settings` : "/admin/stores",
+      href: "/admin/settings",
       icon: Settings,
     },
   ];
@@ -119,9 +106,8 @@ export function AdminNav() {
   };
 
   const isActivePath = (href: string, exact?: boolean) => {
-    const cleanHref = href.split("?")[0];
-    if (exact) return pathname === cleanHref;
-    return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`);
+    if (exact) return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
@@ -130,22 +116,22 @@ export function AdminNav() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-border p-4">
         <div className="flex items-center">
           <SidebarTrigger />
-          <p className="text-xl font-bold px-4">Panel de Tiendas</p>
+          <p className="text-xl font-bold px-4">Panel del Catálogo</p>
         </div>
       </div>
 
       <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
         <SidebarHeader className="">
           <button
-            onClick={() => router.push(storeSlug ? `/admin/stores/${storeSlug}` : "/admin/stores")}
+            onClick={() => router.push("/admin")}
             className="shrink-0 cursor-pointer flex flex-row items-center"
             aria-label="Ir a inicio"
           >
             <div className="relative">
-              {storeData?.theme?.branding?.logoUrl ? (
+              {branding?.logoUrl ? (
                 <Image
-                  src={storeData?.theme?.branding?.logoUrl}
-                  alt={storeData?.theme?.branding?.logoAlt || "Logo"}
+                  src={branding.logoUrl}
+                  alt={branding.logoAlt || "Logo"}
                   className="object-cover p-1"
                   width={92}
                   height={92}
@@ -156,16 +142,12 @@ export function AdminNav() {
                 </div>
               )}
             </div>
-            {store && (
+            {site?.name && (
               <div className="flex flex-row text-md font-bold text-foreground px-4 items-center">
-                <p>{store.name}</p>
+                <p>{site.name}</p>
               </div>
             )}
           </button>
-          <Link href="/admin/stores" className="cursor-pointer justify-start flex flex-row items-center px-4 py-2 hover:bg-muted rounded-md">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            <span >Ir a tiendas</span>
-          </Link>
         </SidebarHeader>
 
         <SidebarContent className="px-4">

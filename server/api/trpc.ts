@@ -5,7 +5,6 @@ import { Role } from '../../generated/prisma/enums'
 
 type Context = {
     session: Awaited<ReturnType<typeof getApiSession>>
-    activeStoreId?: string
 }
 
 const t = initTRPC.context<Context>().create({
@@ -36,7 +35,6 @@ const ensureAuth = t.middleware(async ({ ctx, next }) => {
                 ...ctx.session,
                 user: ctx.session.user,
             },
-            activeStoreId: ctx.activeStoreId,
         },
     })
 })
@@ -53,7 +51,6 @@ const ensureAdmin = t.middleware(async ({ ctx, next }) => {
                 ...ctx.session,
                 user: ctx.session.user,
             },
-            activeStoreId: ctx.activeStoreId,
         },
     })
 })

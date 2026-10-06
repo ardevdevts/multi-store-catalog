@@ -1,31 +1,21 @@
 import { router, publicProcedure } from '../trpc'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { TRPCError } from '@trpc/server'
 
 export const subcategoriesRouter = router({
     list: publicProcedure
         .input(
-            z.object({ storeSlug: z.string(), slug: z.string().optional(), categoryId: z.string().optional() })
+            z.object({ slug: z.string().optional(), categoryId: z.string().optional() }).optional()
         )
         .query(async ({ input }) => {
-            if (!input) {
-                throw new TRPCError({ code: 'BAD_REQUEST', message: 'storeSlug is required' })
+            const where: { isActive: boolean; slug?: string; categoryId?: string } = {
+                isActive: true,
             }
 
-            const { storeSlug, slug, categoryId } = input
+            if (input?.slug) where.slug = input.slug
+            if (input?.categoryId) where.categoryId = input.categoryId
 
-            const store = await prisma.store.findUnique({ where: { slug: storeSlug } })
-            if (!store) {
-                throw new TRPCError({ code: 'NOT_FOUND', message: 'Store not found' })
-            }
-
-            const where: any = { isActive: true, storeId: store.id }
-
-            if (slug) where.slug = slug
-            if (categoryId) where.categoryId = categoryId
-
-            if (slug) {
+            if (input?.slug) {
                 const subcategory = await prisma.subcategory.findFirst({ where, include: { category: true } })
                 return {
                     docs: subcategory ? [subcategory] : [],

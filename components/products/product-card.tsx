@@ -32,7 +32,6 @@ interface ProductCardProps {
     alt?: string;
   }>;
   slug: string;
-  storeSlug?: string;
   featured?: boolean;
   inStock?: boolean;
   unit?: string;
@@ -54,7 +53,6 @@ export const ProductCard = ({
   imageAlt,
   images,
   slug,
-  storeSlug,
   featured = false,
   inStock = true,
   unit,
@@ -174,9 +172,7 @@ export const ProductCard = ({
 
   return (
     <Link
-      href={
-        storeSlug ? `/store/${storeSlug}/product/${slug}` : `/product/${slug}`
-      }
+      href={`/product/${slug}`}
       className="block h-full"
     >
       <Card className={`group overflow-hidden border-border py-0 h-full flex flex-col ${isMobile ? "bg-card transition-all duration-200 gap-0" : "bg-card transition-all duration-300 hover:-translate-y-1"}`}>
