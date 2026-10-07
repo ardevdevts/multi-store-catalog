@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/db";
 
@@ -10,10 +11,20 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  databaseHooks: {
+    user: {
+      create: {
+        // Sign-up closes for good once the first user exists; only the
+        // first-run setup flow may create accounts.
+        before: async () => {
+          const userCount = await prisma.user.count();
+          if (userCount > 0) {
+            throw new APIError("FORBIDDEN", {
+              message: "El registro de usuarios está deshabilitado",
+            });
+          }
+        },
+      },
     },
   },
   user: {

@@ -117,6 +117,15 @@ model Price {
   taxIncluded      Boolean         @default(true)
 }
 
+/// Raw image bytes for uploads that could not reach MinIO. `Media.url` points at
+/// `/api/media/<id>`, which serves these bytes when object storage is unavailable.
+model ImageAsset {
+  id        String   @id @default(cuid())
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
 model Media {
   id               String          @id @default(cuid())
   alt              String

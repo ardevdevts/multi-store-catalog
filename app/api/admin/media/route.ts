@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireApiAuth } from '@/lib/session'
-import { uploadFile } from '@/lib/minio'
+import { storeImage } from '@/lib/media-storage'
 import { mediaAltSchema } from '@/lib/api-validators'
 import { prisma } from '@/lib/db'
 
@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
 
-        // Upload to MinIO
-        const url = await uploadFile(buffer, file.name, file.type)
+        // MinIO when reachable, database blob otherwise
+        const stored = await storeImage(buffer, file.name, file.type)
 
         return NextResponse.json({
-            url,
+            url: stored.url,
             alt: parsedAlt.data.alt || file.name,
         })
     } catch (error) {

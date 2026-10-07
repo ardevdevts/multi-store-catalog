@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { Readable } from "stream";
 import type { Readable as NodeReadable } from "stream";
-import { minioClient, BUCKET_NAME, ensureBucketExists } from "@/lib/minio";
-
-// Ensure the bucket exists when the module loads
-await ensureBucketExists().catch(console.error);
+import { minioClient, BUCKET_NAME } from "@/lib/minio";
+import { isObjectStorageAvailable, readImageAsset } from "@/lib/media-storage";
 
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    console.log(BUCKET_NAME);
 
     if (!id) {
         return NextResponse.json(
@@ -20,20 +17,32 @@ export async function GET(
         );
     }
 
-    try {
-        const stat = await minioClient.statObject(BUCKET_NAME, id);
-        const stream = await minioClient.getObject(BUCKET_NAME, id) as unknown as NodeReadable;
+    // Object storage is the primary backend; it is only consulted when MinIO answers.
+    if (await isObjectStorageAvailable()) {
+        try {
+            const stat = await minioClient.statObject(BUCKET_NAME, id);
+            const stream = await minioClient.getObject(BUCKET_NAME, id) as unknown as NodeReadable;
 
-        const webStream = Readable.toWeb(stream);
+            return new Response(Readable.toWeb(stream) as BodyInit, {
+                headers: {
+                    "Content-Type": stat.metaData["content-type"] ?? "image/jpeg",
+                    "Cache-Control": "public, max-age=3600",
+                },
+            });
+        } catch (err) {
+            console.error("MinIO read failed, falling back to the database:", err);
+        }
+    }
 
-        return new Response(webStream as any, {
-            headers: {
-                "Content-Type": stat.metaData["content-type"] ?? "image/jpeg",
-                "Cache-Control": "public, max-age=3600",
-            },
-        });
-    } catch (err) {
-        console.error(err);
+    const asset = await readImageAsset(id);
+    if (!asset) {
         return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
+
+    return new Response(new Uint8Array(asset.bytes), {
+        headers: {
+            "Content-Type": asset.contentType,
+            "Cache-Control": "public, max-age=3600",
+        },
+    });
 }

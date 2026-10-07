@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from "../../trpc";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
-import { uploadFile, deleteFile, minioClient, BUCKET_NAME } from "@/lib/minio";
+import { describeImage, deleteStoredImage, storeImage } from "@/lib/media-storage";
 import { TRPCError } from "@trpc/server";
 import { ErrorCode, createErrorWithCode } from "@/lib/error-codes";
 
@@ -52,18 +52,7 @@ export const adminMediaRouter = router({
       });
     }
 
-    const objectName = media.url.split("/").pop();
-    if (!objectName)
-      throw new Error("Could not determine object name from URL");
-
-    try {
-      const stat = await minioClient.statObject(BUCKET_NAME, objectName);
-      return { ...media, stat };
-    } catch (error) {
-      console.error("Error getting object stat:", error);
-      // If stat fails, just return media. The object might be missing from storage.
-      return { ...media, stat: null };
-    }
+    return { ...media, stat: await describeImage(media.url) };
   }),
 
   update: protectedProcedure
@@ -89,10 +78,11 @@ export const adminMediaRouter = router({
     )
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBase64, "base64");
-      const url = await uploadFile(buffer, input.fileName, input.mimeType);
+      const alt = input.alt ?? input.fileName;
+      const stored = await storeImage(buffer, input.fileName, input.mimeType);
 
       const media = await prisma.media.create({
-        data: { url, alt: input.alt ?? input.fileName },
+        data: { url: stored.url, alt },
       });
       return media;
     }),
@@ -121,8 +111,7 @@ export const adminMediaRouter = router({
         });
       }
 
-      const fileName = media.url.split("/").pop();
-      if (fileName) await deleteFile(fileName);
+      await deleteStoredImage(media.url);
       await prisma.media.delete({ where: { id: input } });
       return { success: true };
     } catch (error: any) {

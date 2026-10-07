@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireApiAuth } from '@/lib/session'
 import { prisma } from '@/lib/db'
-import { deleteFile } from '@/lib/minio'
+import { deleteStoredImage } from '@/lib/media-storage'
 
 export async function DELETE(
     request: NextRequest,
@@ -22,11 +22,8 @@ export async function DELETE(
             return NextResponse.json({ error: 'Media not found' }, { status: 404 })
         }
 
-        // Extract filename from URL
-        const fileName = media.url.split('/').pop()
-        if (fileName) {
-            await deleteFile(fileName)
-        }
+        // Remove the bytes from whichever backend holds them (MinIO or database)
+        await deleteStoredImage(media.url)
 
         await prisma.media.delete({
             where: { id },

@@ -6,7 +6,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Acceso - Una Ganga",
-  description: "Inicia sesión o crea tu cuenta para gestionar tus tiendas",
+  description: "Inicia sesión para gestionar tu catálogo",
 };
 
 import "../globals.css";
@@ -18,7 +18,7 @@ export default async function LoginLayout({
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user) {
-    redirect("/admin/stores");
+    redirect("/admin");
   }
   return <>{children}</>;
 }

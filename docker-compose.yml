@@ -20,10 +20,6 @@ services:
       MINIO_PORT: ${MINIO_PORT:-9000}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
 
-      # Better Auth (optional but recommended if using social login)
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-
       # SMTP (required only if using contact form)
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}

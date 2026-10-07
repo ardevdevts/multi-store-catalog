@@ -9,9 +9,8 @@ This file defines coding standards for agents and contributors working in this r
 
 ## Project Structure
 - `app/`: Next.js App Router entrypoint.
-- `app/(frontend)/store/[store]/...`: public storefront pages by store slug (catalog, product detail, store layout).
-- `app/(main)/...`: marketing/static pages (`contact`, `info`, `privacy`, `terms`, landing).
-- `app/admin/...`: admin backoffice pages (stores, products, media, categories, theme, settings, users).
+- `app/(storefront)/...`: public storefront pages (catalog home at `/`, product detail at `/product/[slug]`, favicon route, store layout).
+- `app/admin/...`: flat admin backoffice pages (dashboard, products, categories, subcategories, currencies, media, theme, branding, settings, users).
 - `app/api/...`: route handlers (auth, media, setup, admin actions, tRPC handler).
 - `components/ui/`: base reusable UI primitives (buttons, dialogs, fields, etc.).
 - `components/products/`, `components/cart/`, `components/filters/`, `components/search/`, `components/wishlist/`: storefront feature components.
@@ -73,8 +72,8 @@ Prefer:
 - Use semantic UI primitives in `components/ui` instead of re-creating common patterns.
 
 ## Type Organization Rules
-- Centralize shared and cross-feature types in `lib/types.ts`.
-- If a feature has many specific types, create a local `types.ts` near that feature and export shared contracts from `lib/types.ts`.
+- Centralize shared and cross-feature types in a shared module under `lib/` (API contracts live in `lib/api-validators.ts`, site settings in `lib/site.ts`).
+- If a feature has many specific types, create a local `types.ts` near that feature and export shared contracts from `lib/`.
 - Do not scatter duplicate interfaces/types across multiple files.
 - Do not define large inline object types inside components when they can be extracted and reused.
 - Keep names explicit and domain-based (for example `ProductVariant`, `StoreThemeConfig`, `CartItemInput`).
