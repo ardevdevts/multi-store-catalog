@@ -29,17 +29,27 @@ export async function getSiteSettings(): Promise<SiteSettingsRecord> {
     return settings;
   }
 
-  return withPrismaRetry(() =>
-    prisma.siteSettings.upsert({
-      where: { id: SITE_SETTINGS_ID },
-      update: {},
-      create: {
-        id: SITE_SETTINGS_ID,
-        name: defaultSiteName,
-        theme: defaultStoreTheme as unknown as object,
-        settings: {},
-      },
+  // Prisma compiles this model's upsert to a non-atomic SELECT-then-INSERT
+  // inside a transaction, so parallel callers (next build prerender workers,
+  // concurrent first requests) race on the primary key and one fails with
+  // P2002. createMany + skipDuplicates emits INSERT ... ON CONFLICT DO
+  // NOTHING, which makes the bootstrap safe for any number of callers.
+  await withPrismaRetry(() =>
+    prisma.siteSettings.createMany({
+      data: [
+        {
+          id: SITE_SETTINGS_ID,
+          name: defaultSiteName,
+          theme: defaultStoreTheme as unknown as object,
+          settings: {},
+        },
+      ],
+      skipDuplicates: true,
     }),
+  );
+
+  return withPrismaRetry(() =>
+    prisma.siteSettings.findUniqueOrThrow({ where: { id: SITE_SETTINGS_ID } }),
   );
 }
 
